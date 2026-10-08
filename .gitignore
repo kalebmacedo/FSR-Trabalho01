@@ -1,0 +1,13 @@
+# Binário e objetos (o enunciado proíbe enviar executáveis)
+meu_cliente
+*.o
+
+# Material de referência: livros e slides têm direitos autorais e são grandes
+docs/
+
+# Pacote de entrega (gerado na hora de enviar ao Sigaa)
+*_trab01.zip
+
+# Arquivos do sistema e de editores
+.DS_Store
+.vscode/
