@@ -224,9 +224,23 @@ static void test_ip_invalido(void)
           "IP invalido deve devolver -1");
 }
 
+static void test_argumentos_invalidos(void)
+{
+    uint8_t q[DNS_MAX_PACKET], resp[DNS_MAX_PACKET];
+    int qlen = dns_build_query("unb.br", 1, q, sizeof q);
+
+    CHECK(dns_send_and_receive("127.0.0.1", q, -1, 1, resp, sizeof resp) == -1,
+          "tamanho negativo de consulta deve devolver -1");
+    CHECK(dns_send_and_receive("127.0.0.1", NULL, qlen, 1, resp, sizeof resp) == -1,
+          "consulta nula deve devolver -1");
+    CHECK(dns_send_and_receive("127.0.0.1", q, qlen, 1, NULL, sizeof resp) == -1,
+          "buffer de resposta nulo deve devolver -1");
+}
+
 int main(void)
 {
     test_ip_invalido();
+    test_argumentos_invalidos();
     test_resposta_direta();
     test_descarta_id_errado();
     test_descarta_qr_zero();

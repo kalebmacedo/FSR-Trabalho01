@@ -23,11 +23,11 @@
 
 /* Milissegundos desde um instante fixo (relógio monotônico,
  * que não volta para trás se alguém mudar a hora do sistema) */
-static long agora_ms(void)
+static int64_t agora_ms(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (long)ts.tv_sec * 1000L + ts.tv_nsec / 1000000L;
+    return (int64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
 /*
@@ -59,12 +59,12 @@ static int resposta_valida(const uint8_t *resp, ssize_t n, uint16_t id,
  * Pacotes inválidos são descartados e a espera continua no tempo que resta.
  * Retorna o tamanho da resposta ou -1 se o prazo acabar.
  */
-static int espera_resposta(int sock, long limite_ms, uint16_t id,
+static int espera_resposta(int sock, int64_t limite_ms, uint16_t id,
                            const struct sockaddr_in *servidor,
                            uint8_t *resp, size_t respsize)
 {
     for (;;) {
-        long resta = limite_ms - agora_ms();
+        int64_t resta = limite_ms - agora_ms();
         fd_set leitura;
         struct timeval tv;
         struct sockaddr_in de;
@@ -104,6 +104,10 @@ int dns_send_and_receive_port(const char *server_ip, uint16_t port,
     int sock;
     int tentativa;
     int n = -1;
+
+    if (server_ip == NULL || query == NULL || qlen <= 0 ||
+        resp == NULL || respsize < DNS_HEADER_SIZE)
+        return -1;
 
     /* Endereço do servidor: IPv4 em texto -> binário (sem resolver nomes) */
     memset(&servidor, 0, sizeof servidor);

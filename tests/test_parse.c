@@ -269,6 +269,29 @@ static void test_cabecalho_invalido(void)
           "pacote menor que o cabecalho deve dar DNS_FAIL");
 }
 
+static void test_pergunta_invalida(void)
+{
+    pkt_t p;
+    mx_record_t mx[DNS_MAX_MX];
+    int count;
+
+    cabecalho(&p, ID, 0x8180, 0, 0);
+    CHECK(dns_parse_mx(p.b, p.n, ID, mx, DNS_MAX_MX, &count) == DNS_FAIL,
+          "resposta deve repetir exatamente uma pergunta");
+
+    cabecalho(&p, ID, 0x8180, 1, 0);
+    pergunta(&p, "unb.br");
+    p.b[p.n - 3] = 1; /* QTYPE A em vez de MX */
+    CHECK(dns_parse_mx(p.b, p.n, ID, mx, DNS_MAX_MX, &count) == DNS_FAIL,
+          "QTYPE da resposta deve ser MX");
+
+    cabecalho(&p, ID, 0x8180, 1, 0);
+    pergunta(&p, "unb.br");
+    p.b[p.n - 1] = 3; /* QCLASS CH em vez de IN */
+    CHECK(dns_parse_mx(p.b, p.n, ID, mx, DNS_MAX_MX, &count) == DNS_FAIL,
+          "QCLASS da resposta deve ser IN");
+}
+
 static void test_todo_corte_do_pacote_falha(void)
 {
     /* Corta a resposta de unb.br em todos os tamanhos possíveis:
@@ -436,6 +459,7 @@ int main(void)
     test_cname_seguido_de_mx();
     test_rcodes();
     test_cabecalho_invalido();
+    test_pergunta_invalida();
     test_todo_corte_do_pacote_falha();
     test_ponteiro_em_loop();
     test_ponteiro_para_fora();

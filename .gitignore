@@ -1,6 +1,9 @@
 # Binário e objetos (o enunciado proíbe enviar executáveis)
 meu_cliente
 *.o
+/tests/test_query
+/tests/test_parse
+/tests/test_net
 
 # Material de referência: livros e slides têm direitos autorais e são grandes
 docs/

@@ -16,7 +16,7 @@ Cliente DNS que consulta registros **MX** (servidores de e-mail) de um domínio,
 ## Sistema operacional
 
 - **Desenvolvimento:** macOS 26.5.1 (Apple Silicon).
-- **Testes em Linux:** _preencher (distribuição, versão e versão do GCC usadas no teste final)_.
+- **Testes em Linux:** Ubuntu 24.04.4 LTS (WSL2), GCC 13.3.0.
 
 O código usa apenas C99 e a API POSIX de sockets, então compila em Linux e em macOS.
 

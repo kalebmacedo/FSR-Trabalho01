@@ -111,8 +111,10 @@ dns_status_t dns_parse_mx(const uint8_t *resp, int len, uint16_t id,
     char nome[DNS_MAX_NAME + 1];
     int pos, i;
 
+    if (count == NULL)
+        return DNS_FAIL;
     *count = 0;
-    if (resp == NULL || len < DNS_HEADER_SIZE)
+    if (resp == NULL || mx == NULL || max_mx <= 0 || len < DNS_HEADER_SIZE)
         return DNS_FAIL;
 
     /* ---- Cabeçalho (12 bytes) ---- */
@@ -127,6 +129,8 @@ dns_status_t dns_parse_mx(const uint8_t *resp, int len, uint16_t id,
         return DNS_FAIL; /* QR = 0: não é resposta */
     if (((flags >> 11) & 0x0F) != 0)
         return DNS_FAIL; /* OPCODE diferente de QUERY padrão */
+    if (qdcount != 1)
+        return DNS_FAIL; /* a resposta deve repetir a única pergunta enviada */
     if ((flags & 0x000F) == DNS_RCODE_NXDOMAIN)
         return DNS_NXDOMAIN;
     if ((flags & 0x000F) != 0)
@@ -135,8 +139,13 @@ dns_status_t dns_parse_mx(const uint8_t *resp, int len, uint16_t id,
     /* ---- Seção de pergunta: só pulamos (nome + QTYPE + QCLASS) ---- */
     pos = DNS_HEADER_SIZE;
     for (i = 0; i < qdcount; i++) {
+        uint16_t qtype = 0, qclass = 0;
+
         pos = le_nome(resp, len, pos, nome, sizeof nome);
-        if (pos < 0 || pos + 4 > len)
+        if (pos < 0 || le_u16(resp, len, pos, &qtype) < 0 ||
+            le_u16(resp, len, pos + 2, &qclass) < 0)
+            return DNS_FAIL;
+        if (qtype != DNS_TYPE_MX || qclass != DNS_CLASS_IN)
             return DNS_FAIL;
         pos += 4;
     }
