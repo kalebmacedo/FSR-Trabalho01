@@ -451,6 +451,101 @@ static void test_truncado_usa_o_que_veio(void)
           "com TC=1, os MX completos que vieram devem ser usados");
 }
 
+/* ANCOUNT = 3, mas só 2 MX chegaram inteiros: o 3º foi cortado no meio */
+static void resposta_cortada(pkt_t *p, int flags)
+{
+    int r;
+
+    cabecalho(p, ID, flags, 1, 3);
+    pergunta(p, "exemplo.com");
+    r = inicio_rr(p, DNS_TYPE_MX);
+    u16(p, 20);
+    nome(p, "mx2.exemplo.com");
+    fim_rr(p, r);
+    r = inicio_rr(p, DNS_TYPE_MX);
+    u16(p, 10);
+    nome(p, "mx1.exemplo.com");
+    fim_rr(p, r);
+    r = inicio_rr(p, DNS_TYPE_MX);
+    u16(p, 30);
+    nome(p, "mx3.exemplo.com");
+    fim_rr(p, r);
+    p->n -= 8; /* corta no meio do nome do 3º MX */
+}
+
+static void test_truncado_com_registro_incompleto(void)
+{
+    pkt_t p;
+    mx_record_t mx[DNS_MAX_MX];
+    int count = -1;
+
+    resposta_cortada(&p, 0x8380); /* TC = 1 */
+    CHECK(dns_parse_mx(p.b, p.n, ID, mx, DNS_MAX_MX, &count) == DNS_OK,
+          "com TC=1, os MX completos antes do corte devem ser usados");
+    CHECK(count == 2, "so os 2 MX completos devem ser contados");
+    CHECK(count == 2 && strcmp(mx[0].exchange, "mx1.exemplo.com") == 0 &&
+          strcmp(mx[1].exchange, "mx2.exemplo.com") == 0,
+          "MX completos ordenados por preferencia");
+}
+
+static void test_sem_tc_registro_incompleto_falha(void)
+{
+    pkt_t p;
+    mx_record_t mx[DNS_MAX_MX];
+    int count;
+
+    resposta_cortada(&p, 0x8180); /* TC = 0 */
+    CHECK(dns_parse_mx(p.b, p.n, ID, mx, DNS_MAX_MX, &count) == DNS_FAIL,
+          "sem TC, registro incompleto e pacote malformado");
+}
+
+static void test_truncado_sem_mx_completo_falha(void)
+{
+    /* Com TC=1 e nenhum MX completo, não dá para afirmar "sem MX" */
+    pkt_t p;
+    mx_record_t mx[DNS_MAX_MX];
+    int count, len, falhas = 0;
+
+    cabecalho(&p, ID, 0x8380, 1, 0);
+    pergunta(&p, "exemplo.com");
+    CHECK(dns_parse_mx(p.b, p.n, ID, mx, DNS_MAX_MX, &count) == DNS_FAIL,
+          "TC=1 sem respostas deve dar DNS_FAIL, nao DNS_NO_MX");
+
+    /* Resposta de unb.br com TC=1, cortada em todos os tamanhos */
+    resposta_unb(&p);
+    p.b[2] |= 0x02;
+    for (len = 0; len < p.n; len++)
+        if (dns_parse_mx(p.b, len, ID, mx, DNS_MAX_MX, &count) != DNS_FAIL)
+            falhas++;
+    CHECK(falhas == 0, "TC=1 cortado antes do 1o MX completo deve dar DNS_FAIL");
+}
+
+static void test_byte_nao_imprimivel(void)
+{
+    /* Um servidor malicioso pode pôr bytes de controle no nome
+     * (ex.: ESC [ 2 J limpa o terminal); eles devem virar '?' */
+    static const uint8_t nome_mau[] = {
+        5, 'a', 0x1B, '[', '2', 'J', /* ESC */
+        4, 'b', ' ', 'c', 0xE9,      /* espaço e byte não ASCII */
+        3, 'c', 'o', 'm', 0
+    };
+    pkt_t p;
+    mx_record_t mx[DNS_MAX_MX];
+    int count = -1, r, i;
+
+    cabecalho(&p, ID, 0x8180, 1, 1);
+    pergunta(&p, "exemplo.com");
+    r = inicio_rr(&p, DNS_TYPE_MX);
+    u16(&p, 10);
+    for (i = 0; i < (int)sizeof nome_mau; i++)
+        u8(&p, nome_mau[i]);
+    fim_rr(&p, r);
+
+    CHECK(dns_parse_mx(p.b, p.n, ID, mx, DNS_MAX_MX, &count) == DNS_OK, "deve dar DNS_OK");
+    CHECK(count == 1 && strcmp(mx[0].exchange, "a?[2J.b?c?.com") == 0,
+          "bytes nao imprimiveis devem virar '?'");
+}
+
 int main(void)
 {
     test_um_mx();
@@ -469,5 +564,9 @@ int main(void)
     test_null_mx();
     test_respeita_max_mx();
     test_truncado_usa_o_que_veio();
+    test_truncado_com_registro_incompleto();
+    test_sem_tc_registro_incompleto_falha();
+    test_truncado_sem_mx_completo_falha();
+    test_byte_nao_imprimivel();
     return TEST_SUMMARY("test_parse");
 }
