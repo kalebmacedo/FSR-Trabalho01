@@ -114,9 +114,9 @@ make e2e    # testes de ponta a ponta com servidores DNS reais (precisa de inter
 ```
 
 - `tests/test_query.c`: confere byte a byte o pacote de consulta (imprime o de `unb.br` em hexadecimal) e as validações de nome.
-- `tests/test_parse.c`: respostas montadas à mão, cobrindo compressão de nomes, CNAME sem MX, NXDOMAIN, SERVFAIL, pacotes cortados em todas as posições, ponteiro em loop e ponteiro para fora do pacote.
+- `tests/test_parse.c`: respostas montadas à mão, cobrindo compressão de nomes, CNAME sem MX, NXDOMAIN, SERVFAIL, pacotes cortados em todas as posições, ponteiro em loop, ponteiro para fora do pacote, respostas truncadas (bit TC) e bytes não imprimíveis nos nomes.
 - `tests/test_net.c`: sobe um servidor DNS falso local e confere as 3 tentativas de 2 s e o descarte de respostas com ID errado, QR=0 ou vindas de outra porta.
-- `tests/e2e.sh`: os 10 casos do plano de testes, comparando a saída com o `dig`.
+- `tests/e2e.sh`: os 10 casos do plano de testes, comparando a saída com o `dig`, e casos extras, como o "Null MX" de `example.com`.
 
 Pacote da consulta MX para `unb.br` (com ID `0xABCD`), gerado por `make test`:
 
@@ -170,13 +170,15 @@ O enunciado deixa alguns pontos em aberto. Adotamos:
 | ID nas tentativas | O mesmo ID nas 3 tentativas (é a mesma transação) |
 | Ponto final no nome (`unb.br.`) | Aceito; a saída mostra o nome sem o ponto, igual a `unb.br` |
 | "Null MX" (`MX 0 .`, RFC 7505: o domínio não recebe e-mail) | Tratado como `Dominio X nao possui entrada MX` |
+| Resposta truncada (bit TC) | Usa os MX completos que chegaram; se nenhum MX chegou inteiro, `Nao foi possível coletar entrada MX para X` |
+| Bytes não imprimíveis nos nomes recebidos | Exibidos como `?`, para o servidor não enviar sequências de controle ao terminal |
 | Argumentos faltando, IP ou nome inválido | Mensagem de uso em stderr, código de saída 1 |
 
 ## Limitações conhecidas
 
 - Só IPv4: o servidor DNS precisa ser informado por um endereço IPv4.
 - Só consultas do tipo MX, classe IN.
-- Sem fallback para TCP: se a resposta vier truncada (bit TC), usamos os registros completos que chegaram.
+- Sem fallback para TCP: se a resposta vier truncada (bit TC), usamos os registros MX completos que chegaram antes do corte. Se nenhum chegou inteiro, o programa informa `Nao foi possível coletar entrada MX para X`, pois não dá para afirmar que o domínio não tem MX.
 - Sem EDNS: a consulta segue o formato do enunciado, então o servidor limita a resposta a 512 bytes.
 - Guarda no máximo 32 registros MX por resposta.
 - O nome de domínio é enviado como digitado; não há suporte a nomes internacionalizados (acentos/IDN) nem a sequências de escape.

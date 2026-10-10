@@ -125,6 +125,10 @@ confere "E2 argumento a mais" "" "$USO" 1
 roda unb..br 8.8.8.8
 confere "E3 label vazio (unb..br)" "" "$USO" 1
 
+# Null MX (RFC 7505): example.com publica "MX 0 .", ou seja, não recebe e-mail
+roda_rede example.com 1.1.1.1
+confere "E4 null MX (example.com)" "Dominio example.com nao possui entrada MX" "" 2
+
 rm -f /tmp/e2e_out.$$ /tmp/e2e_err.$$
 echo "e2e: $passou passaram, $falhou falharam"
 [ "$falhou" -eq 0 ]
