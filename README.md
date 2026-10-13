@@ -4,6 +4,24 @@ Fundamentos de Redes de Computadores, Prof. Tiago Alves, UnB Gama.
 
 Cliente DNS que consulta registros **MX** (servidores de e-mail) de um domínio, enviando a consulta por **UDP** para a porta 53 de um servidor DNS informado pelo usuário. A consulta é montada byte a byte pelo próprio programa (RFC 1035, seção 4), sem bibliotecas de DNS ou de comunicação além da interface de sockets.
 
+## Conformidade com o enunciado
+
+| Requisito | Como foi atendido |
+| --- | --- |
+| Dois argumentos de linha de comando | `./meu_cliente <dominio> <ip_servidor_dns>` |
+| Transporte UDP na porta 53 | Socket `AF_INET`/`SOCK_DGRAM` e envio com `sendto()` para a porta 53 |
+| Consulta montada programaticamente | Cabeçalho e pergunta DNS são escritos byte a byte em `src/dns_query.c`, sem biblioteca de DNS |
+| Transaction ID aleatório de 16 bits | Gerado por `dns_random_id()` a partir de `/dev/urandom`, com uma alternativa baseada no relógio e no PID |
+| Flags `0x0100` | Somente o bit RD (recursion desired) é ativado |
+| Uma pergunta e nenhuma resposta no pedido | QDCOUNT = 1; ANCOUNT, NSCOUNT e ARCOUNT = 0 |
+| Query MX/IN | QTYPE = 15 (MX) e QCLASS = 1 (IN) para o domínio recebido |
+| Espera de 2 segundos e até 3 tentativas | `select()` controla o prazo de cada tentativa em `src/net.c` |
+| Formato da saída | Cada resultado é impresso como `nome_dominio <> nome_servidor_email` em stdout |
+| Interpretação da resposta | O programa trata RCODE, percorre os RRs, descomprime nomes e extrai preferência e servidor MX em `src/dns_parse.c` |
+| Somente sockets como recurso de comunicação | Não são usadas bibliotecas de DNS, resolvedores do sistema ou bibliotecas de comunicação de terceiros |
+
+As seções **Sistema operacional**, **Ambiente de desenvolvimento**, **Como construir**, **Como executar**, **Telas (instruções de uso)** e **Limitações conhecidas** contêm os seis itens de documentação mínima exigidos no enunciado.
+
 ## Integrantes
 
 | Nome | Matrícula |
@@ -12,6 +30,8 @@ Cliente DNS que consulta registros **MX** (servidores de e-mail) de um domínio,
 | _preencher_ | _preencher_ |
 | _preencher_ | _preencher_ |
 | _preencher_ | _preencher_ |
+
+> **Antes da entrega:** substituir todos os campos `_preencher_` pelos nomes completos e matrículas. O enunciado escrito menciona duplas; esta tabela tem quatro linhas porque o professor informou em sala que o trabalho pode ser feito por quatro integrantes.
 
 ## Sistema operacional
 
@@ -28,11 +48,21 @@ O código usa apenas C99 e a API POSIX de sockets, então compila em Linux e em 
 - Controle de versão: Git (repositório privado no GitHub).
 - Ferramentas de apoio: `dig`, para comparar resultados, e Wireshark, com filtro `dns`, para inspecionar os pacotes.
 
+### Pré-requisitos
+
+Para compilar e executar a aplicação, são necessários um ambiente POSIX, um compilador C compatível com C99 e o GNU Make. Em Ubuntu/Debian, o pacote `build-essential` fornece o compilador e o Make:
+
+```bash
+sudo apt install build-essential
+```
+
+Os testes unitários não precisam de acesso à internet. Os testes de ponta a ponta também exigem o comando `dig` (pacote `dnsutils`) e uma rede que permita tráfego UDP para a porta 53. Para gerar o arquivo de entrega, é necessário o comando `zip`.
+
 ## Como construir
 
 Na raiz do projeto:
 
-```text
+```bash
 make
 ```
 
@@ -40,13 +70,13 @@ O comando gera o executável `meu_cliente`. Flags de compilação: `-Wall -Wextr
 
 Para apagar o executável e os arquivos objeto:
 
-```text
+```bash
 make clean
 ```
 
 ## Como executar
 
-```text
+```bash
 ./meu_cliente <dominio> <ip_servidor_dns>
 ```
 
@@ -66,9 +96,9 @@ Observação: a rede da UnB pode bloquear consultas a servidores DNS externos, c
 
 ## Telas (instruções de uso)
 
-Saídas reais do programa:
+Exemplos de uso e saídas esperadas (os servidores MX publicados por cada domínio podem mudar ao longo do tempo):
 
-```text
+```console
 # Resolução bem-sucedida
 $ ./meu_cliente unb.br 8.8.8.8
 unb.br <> unb-br.mail.protection.outlook.com
@@ -108,7 +138,7 @@ Uso: ./meu_cliente <dominio> <ip_servidor_dns>
 
 ## Testes
 
-```text
+```bash
 make test   # testes unitários, sem internet
 make e2e    # testes de ponta a ponta com servidores DNS reais (precisa de internet)
 ```
@@ -185,9 +215,34 @@ O enunciado deixa alguns pontos em aberto. Adotamos:
 - Mensagens sem acentuação, exceto onde o enunciado usa ("possível").
 - Em redes com perda de pacotes UDP, as 3 tentativas podem não bastar. Em testes repetidos, o 8.8.8.8 deixou de responder algumas consultas seguidas (o `dig` foi afetado da mesma forma); o programa então informa a falha após ~6 s, como pede o enunciado.
 
+## Preparação da entrega
+
+O enunciado exige um arquivo ZIP com os códigos-fonte e a documentação, sem executáveis. Antes de gerar o pacote, preencha a tabela de integrantes e execute:
+
+```bash
+make test
+make entrega ZIP=nome_sobrenome_matricula_nome_sobrenome_matricula_trab01.zip
+```
+
+Se o grupo tiver quatro integrantes conforme a orientação dada em sala, acrescente os quatro conjuntos `nome_sobrenome_matricula` antes de `_trab01.zip`. O alvo `entrega` executa `make clean` e inclui apenas `Makefile`, `README.md`, `src/` e `tests/`. Confira o conteúdo antes de enviar:
+
+```bash
+unzip -l nome_sobrenome_matricula_nome_sobrenome_matricula_trab01.zip
+```
+
+Checklist final:
+
+- [ ] nomes e matrículas preenchidos no README;
+- [ ] `make clean && make` concluído sem erros ou avisos em Linux;
+- [ ] `make test` concluído com sucesso;
+- [ ] exemplos principais executados em uma rede que permita UDP 53;
+- [ ] ZIP nomeado no padrão solicitado;
+- [ ] ZIP contém fontes e documentação e não contém `meu_cliente`, arquivos `.o` ou executáveis de teste.
+
 ## Referências
 
-- RFC 1034 e RFC 1035 (seção 4: formato da mensagem; 4.1.4: compressão de nomes).
+- [RFC 1034 — Domain Names: Concepts and Facilities](https://www.rfc-editor.org/rfc/rfc1034).
+- [RFC 1035 — Domain Names: Implementation and Specification](https://www.rfc-editor.org/rfc/rfc1035), seção 4 (formato da mensagem) e seção 4.1.4 (compressão de nomes).
 - KUROSE, J.; ROSS, K. _Redes de Computadores e a Internet: uma abordagem top-down_. 6. ed., seção 2.5.
 - MITCHELL, M.; OLDHAM, J.; SAMUEL, A. _Advanced Linux Programming_. New Riders, 2001, seção 5.5 (sockets).
-- RFC 7505 (Null MX).
+- [RFC 7505 — A "Null MX" No Service Resource Record for Domains That Accept No Mail](https://www.rfc-editor.org/rfc/rfc7505).

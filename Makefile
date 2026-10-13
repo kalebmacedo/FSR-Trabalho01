@@ -46,7 +46,7 @@ clean:
 #   make entrega ZIP=nome_sobrenome_matricula_..._trab01.zip
 entrega: clean
 	@test -n "$(ZIP)" || { echo "Uso: make entrega ZIP=nome_sobrenome_matricula_(x4)_trab01.zip"; exit 1; }
-	rm -f $(ZIP)
-	zip -r $(ZIP) Makefile README.md src tests
+	rm -f "$(ZIP)"
+	ZIP= zip -r "$(ZIP)" Makefile README.md src tests
 
 .PHONY: all test e2e clean entrega
