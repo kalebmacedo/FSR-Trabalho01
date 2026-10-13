@@ -138,7 +138,7 @@ Uso: ./meu_cliente <dominio> <ip_servidor_dns>
 
 ```bash
 make test   # testes unitários, sem internet
-make e2e    # testes de ponta a ponta com servidoresDDNS reais (precisa de internet)
+make e2e    # testes de ponta a ponta com servidores DNS reais (precisa de internet)
 ```
 
 - `tests/test_query.c`: confere byte a byte o pacote de consulta (imprime o de `unb.br` em hexadecimal) e as validações de nome.
@@ -212,30 +212,6 @@ O enunciado deixa alguns pontos em aberto. Adotamos:
 - O nome de domínio é enviado como digitado; não há suporte a nomes internacionalizados (acentos/IDN) nem a sequências de escape.
 - Mensagens sem acentuação, exceto onde o enunciado usa ("possível").
 - Em redes com perda de pacotes UDP, as 3 tentativas podem não bastar. Em testes repetidos, o 8.8.8.8 deixou de responder algumas consultas seguidas (o `dig` foi afetado da mesma forma); o programa então informa a falha após ~6 s, como pede o enunciado.
-
-## Preparação da entrega
-
-O enunciado exige um arquivo ZIP com os códigos-fonte e a documentação, sem executáveis. Antes de gerar o pacote, preencha a tabela de integrantes e execute:
-
-```bash
-make test
-make entrega ZIP=nome_sobrenome_matricula_nome_sobrenome_matricula_trab01.zip
-```
-
-Se o grupo tiver quatro integrantes conforme a orientação dada em sala, acrescente os quatro conjuntos `nome_sobrenome_matricula` antes de `_trab01.zip`. O alvo `entrega` executa `make clean` e inclui apenas `Makefile`, `README.md`, `src/` e `tests/`. Confira o conteúdo antes de enviar:
-
-```bash
-unzip -l nome_sobrenome_matricula_nome_sobrenome_matricula_trab01.zip
-```
-
-Checklist final:
-
-- [ ] nomes e matrículas preenchidos no README;
-- [ ] `make clean && make` concluído sem erros ou avisos em Linux;
-- [ ] `make test` concluído com sucesso;
-- [ ] exemplos principais executados em uma rede que permita UDP 53;
-- [ ] ZIP nomeado no padrão solicitado;
-- [ ] ZIP contém fontes e documentação e não contém `meu_cliente`, arquivos `.o` ou executáveis de teste.
 
 ## Referências
 
