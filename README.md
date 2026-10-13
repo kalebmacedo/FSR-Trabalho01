@@ -26,10 +26,9 @@ As seções **Sistema operacional**, **Ambiente de desenvolvimento**, **Como con
 
 | Nome | Matrícula |
 | --- | --- |
-| _preencher_ | _preencher_ |
-| _preencher_ | _preencher_ |
-| _preencher_ | _preencher_ |
-| _preencher_ | _preencher_ |
+| Kaleb de Souza Macedo | 231026975 |
+| Lucas Monteiro Freitas | 231035446 |
+| João Maurício Pilla Nascimento | 231011533 |
 
 > **Antes da entrega:** substituir todos os campos `_preencher_` pelos nomes completos e matrículas. O enunciado escrito menciona duplas; esta tabela tem quatro linhas porque o professor informou em sala que o trabalho pode ser feito por quatro integrantes.
 
@@ -140,7 +139,7 @@ Uso: ./meu_cliente <dominio> <ip_servidor_dns>
 
 ```bash
 make test   # testes unitários, sem internet
-make e2e    # testes de ponta a ponta com servidores DNS reais (precisa de internet)
+make e2e    # testes de ponta a ponta com servidoresDDNS reais (precisa de internet)
 ```
 
 - `tests/test_query.c`: confere byte a byte o pacote de consulta (imprime o de `unb.br` em hexadecimal) e as validações de nome.
