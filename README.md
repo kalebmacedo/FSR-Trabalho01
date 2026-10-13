@@ -30,7 +30,6 @@ As seções **Sistema operacional**, **Ambiente de desenvolvimento**, **Como con
 | Lucas Monteiro Freitas | 231035446 |
 | João Maurício Pilla Nascimento | 231011533 |
 
-> **Antes da entrega:** substituir todos os campos `_preencher_` pelos nomes completos e matrículas. O enunciado escrito menciona duplas; esta tabela tem quatro linhas porque o professor informou em sala que o trabalho pode ser feito por quatro integrantes.
 
 ## Sistema operacional
 
